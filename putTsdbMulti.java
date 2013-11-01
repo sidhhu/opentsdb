@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class putTsdbMulti implements Runnable {
 	Random r = new Random();
-	//private final long countUntil;
 	int tag1_v,tag2_v,tag3_v,tag4_v, metrics;
 	public static AtomicLong count = new AtomicLong();
 	Socket echoSocket = null;
