@@ -86,6 +86,22 @@ public final class Internal {
     return ((TsdbQuery) query).getScanner();
   }
 
+  /** Returns a set of scanners, one for each bucket if salted, or one scanner
+   * if salting is disabled. 
+   * @see TsdbQuery#getScanner() */
+  public static List<Scanner> getScanners(final Query query) {
+    final List<Scanner> scanners = new ArrayList<Scanner>(
+        Const.SALT_WIDTH() > 0 ? Const.SALT_BUCKETS() : 1);
+    if (Const.SALT_WIDTH() > 0) {
+      for (int i = 0; i < Const.SALT_BUCKETS(); i++) {
+        scanners.add(((TsdbQuery) query).getScanner(i));
+      }
+    } else {
+      scanners.add(((TsdbQuery) query).getScanner());
+    }
+    return scanners;
+  }
+  
   /** @see RowKey#metricName */
   public static String metricName(final TSDB tsdb, final byte[] id) {
     return RowKey.metricName(tsdb, id);
@@ -860,4 +876,18 @@ public final class Internal {
     scanner.setKeyRegexp(buf.toString(), Charset.forName("ISO-8859-1"));
   }
 
+  /**
+   * Simple helper to calculate the max value for any width of long from 0 to 7
+   * bytes. 
+   * @param width The width of the byte array we're comparing
+   * @return The maximum unsigned integer value on {@link width} bytes.
+   * @since 2.2
+   */
+  public static long getMaxUnsignedValueOnBytes(final int width) {
+    if (width < 0 || width > 7) {
+      throw new IllegalArgumentException("Width must be from 1 to 7 bytes: " 
+          + width);
+    }
+    return ((long) 1 << width * Byte.SIZE) - 1;
+  }
 }
