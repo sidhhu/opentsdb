@@ -58,6 +58,9 @@ public final class Const {
   /** Max time delta (in seconds) we can store in a column qualifier.  */
   public static final short MAX_TIMESPAN = 3600;
 
+ /** Byte used for the qualifier prefix to indicate this is an append */
+  public static final byte APPEND_PREFIX = 0x05;
+
   /**
    * Array containing the hexadecimal characters (0 to 9, A to F).
    * This array is read-only, changing its contents leads to an undefined
