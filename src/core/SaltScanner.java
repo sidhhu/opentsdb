@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import net.opentsdb.meta.Annotation;
 
@@ -90,6 +92,10 @@ public class SaltScanner {
    * for null or assigning from a scanner's callback. */
   private volatile Exception exception;
   
+  private final AtomicLong num_data_points; 
+  private final AtomicBoolean max_data_points_flag;
+  private final Long max_data_points;
+  
   /**
    * Default ctor that performs some validation. Call {@link scan} after 
    * construction to actually start fetching data.
@@ -137,6 +143,9 @@ public class SaltScanner {
     this.spans = spans;
     this.metric = metric;
     this.tsdb = tsdb;
+    num_data_points = new AtomicLong();
+    max_data_points_flag = new AtomicBoolean();
+    max_data_points = tsdb.config.max_data_points();
   }
 
   /**
@@ -310,6 +319,57 @@ public class SaltScanner {
           final KeyValue compacted;
           try{
             compacted = tsdb.compact(row, notes);
+            if (compacted != null) {
+              byte[] compactValue = compacted.value();
+              byte[] compactQualifier = compacted.qualifier();
+              if(max_data_points_flag.get()) {
+                LOG.debug("Closing the scanner because we exceeded the max data "
+                    + "point limit of " +max_data_points);
+                scanner.close();
+                validateAndTriggerCallback(keyValues, annotations);
+                return;
+              }
+              if(compactQualifier.length % 2 == 0) {
+                // The length of the qualifier is even so this is a put type
+                // so the size of the data is the length of the qualifier by 2
+                num_data_points.getAndAdd(compactQualifier.length / 2);
+              } else {
+                if(compactQualifier[0] == Const.APPEND_PREFIX) {
+                 // this will be a append row so we have to parse the value and 
+                 // find out the size
+                  int length = 0;
+                  int numDataPointsCounter = 0;
+                  if (compactValue.length == 2) {
+                    numDataPointsCounter++;
+                  }
+                  else {
+                    for (int i = 0; i < compactValue.length - 1; i+=length) {
+                      length = Internal.getValueLengthFromQualifier(compactValue, i);
+                      if (Internal.inMilliseconds(compactValue, i)) {
+                        length = length + 4;
+                      } else {
+                        length = length + 2;
+                      }
+                      numDataPointsCounter++;
+                    }
+                  }
+                 num_data_points.getAndAdd(numDataPointsCounter);
+                }
+              }
+              
+              if(max_data_points > 0 && num_data_points.get() >= max_data_points) {
+                max_data_points_flag.getAndSet(true);
+                try {
+                  scanner.close();
+                  handleException(new QueryException("Sorry, You have requested more than our limit of " 
+              +max_data_points+ " data points"));
+                  return;
+                } catch (Exception e) {
+                  LOG.error("Sorry, Scanner is closed", e);
+                  return;
+                }
+              }
+            }
           } catch (final IllegalDataException idex) {
             LOG.error("Caught IllegalDataException exception while parsing the "
                + "row " + key + ", skipping it on scanner " + this, idex);

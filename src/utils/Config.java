@@ -96,7 +96,10 @@ public class Config {
   
   /** tsd.core.tree.enable_processing */
   private boolean enable_tree_processing = false;
-  
+
+ /** tsd.core.scanner.max_data_points */
+  private Long max_data_points = (long) 0;
+ 
   /**
    * The list of properties configured to their defaults or modified by users
    */
@@ -221,6 +224,11 @@ public class Config {
   /** @return whether or not to process new or updated TSMetas through trees */
   public boolean enable_tree_processing() {
     return enable_tree_processing;
+  }
+
+  /** @return the max number of data points we allow to querying */
+  public Long max_data_points() {
+    return max_data_points;
   }
   
   /**
@@ -494,6 +502,7 @@ public class Config {
       + "Content-Type, Accept, Origin, User-Agent, DNT, Cache-Control, "
       + "X-Mx-ReqToken, Keep-Alive, X-Requested-With, If-Modified-Since");
     default_map.put("tsd.query.timeout", "0");
+    default_map.put("tsd.core.scanner.max_data_points", "0");
 
     for (Map.Entry<String, String> entry : default_map.entrySet()) {
       if (!properties.containsKey(entry.getKey()))
@@ -604,6 +613,7 @@ public class Config {
     }
     enable_tree_processing = this.getBoolean("tsd.core.tree.enable_processing");
     fix_duplicates = this.getBoolean("tsd.storage.fix_duplicates");
+    max_data_points = this.getLong("tsd.core.scanner.max_data_points");
   }
   
   /**
