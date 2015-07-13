@@ -326,7 +326,7 @@ public class SaltScanner {
                 LOG.debug("Closing the scanner because we exceeded the max data "
                     + "point limit of " +max_data_points);
                 scanner.close();
-                validateAndTriggerCallback(keyValues, annotations);
+                validateAndTriggerCallback(kvs, annotations);
                 return;
               }
               if(compactQualifier.length % 2 == 0) {
