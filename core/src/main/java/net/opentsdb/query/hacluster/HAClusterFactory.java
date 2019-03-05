@@ -24,6 +24,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import com.google.common.graph.Graphs;
 import com.google.common.reflect.TypeToken;
 import com.stumbleupon.async.Deferred;
@@ -44,6 +45,7 @@ import net.opentsdb.query.TimeSeriesQuery;
 import net.opentsdb.query.idconverter.ByteToStringIdConverterConfig;
 import net.opentsdb.query.QueryFillPolicy.FillWithRealPolicy;
 import net.opentsdb.query.interpolation.types.numeric.NumericInterpolatorConfig;
+import net.opentsdb.query.plan.DefaultQueryPlanner;
 import net.opentsdb.query.plan.QueryPlanner;
 import net.opentsdb.query.pojo.FillPolicy;
 import net.opentsdb.query.processor.BaseQueryNodeFactory;
@@ -80,7 +82,6 @@ import net.opentsdb.utils.DateTime;
  */
 public class HAClusterFactory extends BaseQueryNodeFactory implements 
     TimeSeriesDataSourceFactory {
-
   public static final String TYPE = "HACluster";
   
   public static final String KEY_PREFIX = "tsd.query.";
@@ -415,7 +416,7 @@ public class HAClusterFactory extends BaseQueryNodeFactory implements
         // re-link
         planner.removeEdge(max.get(0), merger);
         predecessor = max.get(max.size() - 1);
-        predecessors = planner.configGraph().predecessors(predecessor);
+        predecessors = Sets.newHashSet(planner.configGraph().predecessors(predecessor));
         for (final QueryNodeConfig pred : predecessors) {
           planner.addEdge(pred, merger);
           planner.removeEdge(pred, predecessor);
@@ -437,6 +438,10 @@ public class HAClusterFactory extends BaseQueryNodeFactory implements
           List<QueryNodeConfig> renamed_pushdowns = 
               Lists.newArrayListWithExpectedSize(source_push_downs.size());
           for (final QueryNodeConfig pd : source_push_downs) {
+            if (((DefaultQueryPlanner) planner).sinkFilters().containsKey(pd.getId())) {
+              ((DefaultQueryPlanner) planner).sinkFilters().remove(pd.getId());
+              ((DefaultQueryPlanner) planner).sinkFilters().put(merger.getId(), merger.getId());
+            }
             if (pd.getSources().contains(config.getId())) {
               renamed_pushdowns.add(pd.toBuilder()
                   .setSources(Lists.newArrayList(pushdown_id))
@@ -679,7 +684,8 @@ public class HAClusterFactory extends BaseQueryNodeFactory implements
                            final TimeSeriesDataSourceFactory factory,
                            final List<QueryNodeConfig> push_downs,
                            final QueryPlanner planner) {
-    if (factory.supportsPushdown(current.getClass())) {
+    if (factory.supportsPushdown(current.getClass()) &&
+        current.pushDown()) {
       push_downs.add(current);
       final Set<QueryNodeConfig> predecessors = 
           planner.configGraph().predecessors(current);
