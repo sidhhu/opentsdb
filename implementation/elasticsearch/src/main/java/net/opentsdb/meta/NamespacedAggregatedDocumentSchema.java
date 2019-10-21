@@ -27,6 +27,8 @@ import java.util.Map;
 import net.opentsdb.configuration.ConfigurationEntrySchema;
 import net.opentsdb.core.BaseTSDBPlugin;
 import net.opentsdb.core.TSDB;
+import net.opentsdb.data.SecondTimeStamp;
+import net.opentsdb.data.TimeStamp.Op;
 import net.opentsdb.meta.BatchMetaQuery.QueryType;
 import net.opentsdb.meta.MetaDataStorageResult.MetaResult;
 import net.opentsdb.meta.impl.MetaClient;
@@ -73,6 +75,7 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
       new TypeReference<Map<String, String>>() { };
 
   private static Exception skip_meta_ex = new RuntimeException("Skipping meta for this namespace");
+
 
   private TSDB tsdb;
 
@@ -244,6 +247,7 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
         return Deferred.fromResult(result);
       }
     }
+
     final Span child;
     if (span != null) {
       child = span.newChild(getClass().getSimpleName() + ".runQuery")
