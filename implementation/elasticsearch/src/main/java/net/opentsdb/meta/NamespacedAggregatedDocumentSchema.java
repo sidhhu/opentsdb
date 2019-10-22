@@ -27,8 +27,6 @@ import java.util.Map;
 import net.opentsdb.configuration.ConfigurationEntrySchema;
 import net.opentsdb.core.BaseTSDBPlugin;
 import net.opentsdb.core.TSDB;
-import net.opentsdb.data.SecondTimeStamp;
-import net.opentsdb.data.TimeStamp.Op;
 import net.opentsdb.meta.BatchMetaQuery.QueryType;
 import net.opentsdb.meta.MetaDataStorageResult.MetaResult;
 import net.opentsdb.meta.impl.MetaClient;
@@ -57,7 +55,7 @@ import org.slf4j.LoggerFactory;
  * @since 3.0
  */
 public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implements
-        MetaDataStorageSchema {
+    MetaDataStorageSchema {
   private static final Logger LOG = LoggerFactory.getLogger(
       NamespacedAggregatedDocumentSchema.class);
 
@@ -76,7 +74,6 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
 
   private static Exception skip_meta_ex = new RuntimeException("Skipping meta for this namespace");
 
-
   private TSDB tsdb;
 
   /** The elastic search client to use */
@@ -94,7 +91,7 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
 
     if (!tsdb.getConfig().hasProperty(getConfigKey(MAX_CARD_KEY))) {
       tsdb.getConfig().register(getConfigKey(MAX_CARD_KEY), 4096, true,
-              "The maximum number of entries to allow for multi-get queries.");
+          "The maximum number of entries to allow for multi-get queries.");
     }
     if (!tsdb.getConfig().hasProperty(getConfigKey(FALLBACK_ON_NO_DATA_KEY))) {
       tsdb.getConfig()
@@ -174,7 +171,7 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
     final Span child;
     if (span != null) {
       child = span.newChild(getClass().getSimpleName() + ".runQuery")
-              .start();
+          .start();
     } else {
       child = null;
     }
@@ -194,10 +191,10 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
 
       @Override
       public Map<NamespacedKey, MetaDataStorageResult> call(final MetaResponse results) {
-        return results.parse(query, 
-            tsdb, 
-            null, 
-            false, 
+        return results.parse(query,
+            tsdb,
+            null,
+            false,
             tsdb.getConfig().getInt(getConfigKey(MAX_CARD_KEY)),
             tsdb.getConfig().getBoolean(getConfigKey(FALLBACK_ON_NO_DATA_KEY)),
             child);
@@ -206,19 +203,19 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
     }
 
     class ErrorCB implements Callback<Map<NamespacedKey, MetaDataStorageResult>,
-            Exception> {
+        Exception> {
       @Override
       public Map<NamespacedKey, MetaDataStorageResult> call(final Exception ex) throws Exception {
         if (child != null) {
           child.setErrorTags(ex)
-                  .finish();
+              .finish();
         }
         if (LOG.isDebugEnabled()) {
           LOG.debug("Returning exception from ES", ex);
         }
         Map<NamespacedKey, MetaDataStorageResult> final_result = new LinkedHashMap<>();
         final_result.put(new NamespacedKey("EXCEPTION", "-1"),new NamespacedAggregatedDocumentResult
-                (MetaResult.EXCEPTION, ex, query));
+            (MetaResult.EXCEPTION, ex, query));
 
         return final_result;
       }
@@ -226,8 +223,8 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
 
     return client.runQuery(metaQuery,
         null, child)
-            .addCallback(new ResultCB())
-            .addErrback(new ErrorCB());
+        .addCallback(new ResultCB())
+        .addErrback(new ErrorCB());
   }
 
   @Override
@@ -247,7 +244,6 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
         return Deferred.fromResult(result);
       }
     }
-
     final Span child;
     if (span != null) {
       child = span.newChild(getClass().getSimpleName() + ".runQuery")
@@ -298,9 +294,9 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
           .build();
 
       final BatchMetaQuery query = DefaultBatchMetaQuery.newBuilder()
-              .setType(QueryType.TIMESERIES)
-              .setMetaQuery(Lists.newArrayList(meta_query))
-              .build();
+          .setType(QueryType.TIMESERIES)
+          .setMetaQuery(Lists.newArrayList(meta_query))
+          .build();
 
       MetaQueryMarker metaQuery = client.buildMultiGetQuery(query);
 
@@ -310,10 +306,10 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
         public MetaDataStorageResult call(final MetaResponse results) {
 
           Map<NamespacedKey, MetaDataStorageResult> parse = results.parse(
-              query, 
-              tsdb, 
-              null, 
-              true, 
+              query,
+              tsdb,
+              null,
+              true,
               tsdb.getConfig().getInt(getConfigKey(MAX_CARD_KEY)),
               tsdb.getConfig().getBoolean(getConfigKey(FALLBACK_ON_NO_DATA_KEY)),
               child);
@@ -327,7 +323,7 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
         public MetaDataStorageResult call(final Exception ex) throws Exception {
           if (child != null) {
             child.setErrorTags(ex)
-                 .finish();
+                .finish();
           }
           if (LOG.isDebugEnabled()) {
             LOG.debug("Returning exception from ES", ex);
@@ -355,10 +351,10 @@ public class NamespacedAggregatedDocumentSchema extends BaseTSDBPlugin implement
   }
 
   @Override
-  public MetaQuery parse(final TSDB tsdb, 
-                         final ObjectMapper mapper, 
-                         final JsonNode jsonNode,
-                         final QueryType type) {
+  public MetaQuery parse(final TSDB tsdb,
+      final ObjectMapper mapper,
+      final JsonNode jsonNode,
+      final QueryType type) {
     return client.parse(tsdb, mapper, jsonNode, type);
   }
 
