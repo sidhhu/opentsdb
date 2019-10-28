@@ -631,11 +631,12 @@ public class ESMetaResponse implements MetaResponse {
     }
 
     for (final Terms.Bucket bucket : ((StringTerms) tag_keys).getBuckets()) {
-      if (result == null) {
-        result =
-            new NamespacedAggregatedDocumentResult(
-                MetaDataStorageResult.MetaResult.DATA, query, meta_query);
-      }
+      if (bucket.getKey().equals(query.aggregationField())) {
+        if (result == null) {
+          result =
+              new NamespacedAggregatedDocumentResult(
+                  MetaDataStorageResult.MetaResult.DATA, query, meta_query);
+        }
       Aggregation sub =
           bucket.getAggregations().get(NamespacedAggregatedDocumentQueryBuilder.TAGS_SUB_AGG);
       if (sub == null || ((InternalFilter) sub).getDocCount() < 1) {
@@ -660,6 +661,7 @@ public class ESMetaResponse implements MetaResponse {
         }
       }
     }
+  }
     return result;
   }
 
