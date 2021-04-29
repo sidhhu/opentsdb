@@ -1,0 +1,27 @@
+version: 2
+updates:
+- package-ecosystem: maven
+  directory: "/"
+  schedule:
+    interval: daily
+  open-pull-requests-limit: 10
+  target-branch: "3.0"
+  ignore:
+  - dependency-name: io.undertow:undertow-servlet
+    versions:
+    - 2.2.3.Final
+    - 2.2.4.Final
+    - 2.2.5.Final
+  - dependency-name: io.undertow:undertow-core
+    versions:
+    - 2.2.3.Final
+    - 2.2.4.Final
+    - 2.2.5.Final
+  - dependency-name: com.fasterxml.jackson.core:jackson-core
+    versions:
+    - 2.12.1
+    - 2.12.2
+  - dependency-name: com.fasterxml.jackson.core:jackson-annotations
+    versions:
+    - 2.12.1
+    - 2.12.2
